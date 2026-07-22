@@ -21,7 +21,7 @@ def upload_audio():
 
         # Inviamo i dati a Gemini sfruttando l'API REST nativa che non risente del bug 401
         # Usiamo il modello gemini-2.5-flash passandogli il prompt e il file
-        url = f"https://googleapis.com{API_KEY}"
+        url = "https://googleapis.com" + API_KEY
         
         # Prepariamo il payload in formato JSON per Google
         # Inviamo l'audio convertito in testo codificato in base64 internamente o chiediamo un'analisi
