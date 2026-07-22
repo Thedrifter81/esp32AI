@@ -16,7 +16,7 @@ def upload_audio():
         audio_data = request.get_data()
         print(f"--> Byte ricevuti: {len(audio_data)}", flush=True)
         
-        # URL fisso e blindato: non può più unirsi in modo errato
+       # URL ufficiale REST corretto per Gemini 2.5 Flash
         complete_url = "https://googleapis.com"
         
         headers = {"Content-Type": "application/json"}
