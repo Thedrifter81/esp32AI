@@ -1,54 +1,53 @@
 import os
 import sys
 from flask import Flask, request
-from openai import OpenAI
+import google.generativeai as genai
 
 app = Flask(__name__)
 
-# Recupera la chiave OpenAI
-api_key = os.environ.get("OPENAI_API_KEY")
-client = OpenAI(api_key=api_key)
+# Configura le API di Google Gemini recuperando la chiave dal server
+api_key = os.environ.get("GEMINI_API_KEY")
+genai.configure(api_key=api_key)
 
 @app.route('/upload', methods=['POST'])
 def upload_audio():
     print("--> Nuova richiesta ricevuta dall'ESP32!", flush=True)
     
     try:
-        # Legge il flusso di dati in modo sicuro per evitare crash di memoria
         audio_data = request.get_data()
         print(f"--> Byte ricevuti: {len(audio_data)}", flush=True)
         
         if len(audio_data) < 100:
-            print("--> Errore: File troppo piccolo o vuoto!", flush=True)
             return "File audio non valido", 400
 
-        # Salva il file WAV temporaneo
+        # Salva temporaneamente il file audio dell'ESP32 sul server
         with open("temp.wav", "wb") as f:
             f.write(audio_data)
             
-        print("--> File temp.wav salvato. Invio a Whisper...", flush=True)
+        print("--> Invio del file audio direttamente a Google Gemini...", flush=True)
         
-        # 1. Trascrizione con Whisper
-        with open("temp.wav", "rb") as audio_file:
-            transcript = client.audio.transcriptions.create(model="whisper-1", file=audio_file)
+        # Carica il file audio nei server di Google usando l'SDK ufficiale
+        audio_file = genai.upload_file(path="temp.wav", mime_type="audio/wav")
+        print(f"--> File caricato su Google con URI: {audio_file.uri}", flush=True)
         
-        print(f"--> Trascrizione completata: {transcript.text}", flush=True)
+        # Inizializza il modello veloce e gratuito Gemini 2.5 Flash
+        model = genai.GenerativeModel("gemini-2.5-flash")
         
-        # 2. Risposta con ChatGPT
-        response = client.chat.completions.create(
-            model="gpt-4o-mini",
-            messages=[
-                {"role": "system", "content": "Rispondi in italiano in modo brevissimo ed essenziale, massimo due frasi."},
-                {"role": "user", "content": transcript.text}
-            ]
-        )
-        reply = response.choices[0].message.content
-        print(f"--> Risposta ChatGPT generata con successo!", flush=True)
+        # Chiede a Gemini di ascoltare l'audio e rispondere direttamente
+        response = model.generate_content([
+            audio_file,
+            "Ascolta questo file audio in italiano. Genera una risposta in italiano che sia brevissima ed essenziale, massimo due frasi."
+        ])
+        
+        # Elimina il file dai server di Google per mantenere pulito lo spazio
+        genai.delete_file(audio_file.name)
+        
+        reply = response.text
+        print(f"--> Risposta di Gemini generata con successo!", flush=True)
         return reply, 200
         
     except Exception as e:
-        # Forza la scrittura dell'errore nei log di Render, visibile anche in caso di crash
-        print(f"!!! CRASH INTERNO DEL SERVER: {str(e)}", file=sys.stderr, flush=True)
+        print(f"!!! ERRORE SERVER: {str(e)}", file=sys.stderr, flush=True)
         return f"Errore interno: {str(e)}", 500
 
 if __name__ == '__main__':
