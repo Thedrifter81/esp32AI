@@ -1,13 +1,13 @@
 import os
 import sys
 from flask import Flask, request
-import google.generativeai as genai
+from google import genai
 
 app = Flask(__name__)
 
-# Configura le API di Google Gemini recuperando la chiave dal server
-api_key = os.environ.get("GEMINI_API_KEY")
-genai.configure(api_key=api_key)
+# CONFIGURAZIONE NUOVO SDK: Incolla la tua chiave AQ. tra le virgolette
+api_key = "AQ.Ab8RN6ZG9LJnlBvHTBRrT3amwuOcvV9l-DJVBr-n4m1DHTfeg"
+client = genai.Client(api_key=api_key)
 
 @app.route('/upload', methods=['POST'])
 def upload_audio():
@@ -26,24 +26,21 @@ def upload_audio():
             
         print("--> Invio del file audio direttamente a Google Gemini...", flush=True)
         
-        # Carica il file audio nei server di Google usando l'SDK ufficiale
-        audio_file = genai.upload_file(path="temp.wav", mime_type="audio/wav")
-        print(f"--> File caricato su Google con URI: {audio_file.uri}", flush=True)
-        
-        # Inizializza il modello veloce e gratuito Gemini 2.5 Flash
-        model = genai.GenerativeModel("gemini-2.5-flash")
-        
-        # Chiede a Gemini di ascoltare l'audio e rispondere direttamente
-        response = model.generate_content([
-            audio_file,
-            "Ascolta questo file audio in italiano. Genera una risposta in italiano che sia brevissima ed essenziale, massimo due frasi."
-        ])
-        
-        # Elimina il file dai server di Google per mantenere pulito lo spazio
-        genai.delete_file(audio_file.name)
+        # Carica e analizza l'audio usando il modello gratuito gemini-2.5-flash
+        # Il nuovo SDK gestisce nativamente i file e l'autenticazione AQ.
+        response = client.models.generate_content(
+            model="gemini-2.5-flash",
+            contents=[
+                genai.types.Part.from_bytes(
+                    data=audio_data,
+                    mime_type="audio/wav"
+                ),
+                "Ascolta questo file audio in italiano. Genera una risposta in italiano che sia brevissima ed essenziale, massimo due frasi."
+            ]
+        )
         
         reply = response.text
-        print(f"--> Risposta di Gemini generata con successo!", flush=True)
+        print(f"--> Risposta di Gemini generata con successo: {reply}", flush=True)
         return reply, 200
         
     except Exception as e:
