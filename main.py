@@ -23,10 +23,14 @@ def upload_audio():
         headers = {"Content-Type": "application/json"}
         
         payload = {
-            "contents": [{
-                "parts": [{"text": "Rispondi in italiano con la frase: Sistema Pronto, l'intelligenza artificiale funziona!"}]
-            }]
+    "contents": [
+        {
+            "parts": [
+                {"text": "Rispondi in italiano con la frase esatta: Sistema Pronto."}
+            ]
         }
+    ]
+}
         
         # Esecuzione della chiamata di rete
         response = requests.post(complete_url, json=payload, headers=headers)
