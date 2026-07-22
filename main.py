@@ -16,9 +16,8 @@ def upload_audio():
         audio_data = request.get_data()
         print(f"--> Byte ricevuti: {len(audio_data)}", flush=True)
         
-        # Endpoint ufficiale diviso nettamente per evitare unioni di testo errate
-        # Endpoint REST ufficiale e corretto per Gemini
-        complete_url = f"https://googleapis.com{API_KEY}"
+        # URL fisso e blindato: non può più unirsi in modo errato
+        complete_url = "https://googleapis.com"
         
         headers = {"Content-Type": "application/json"}
         
